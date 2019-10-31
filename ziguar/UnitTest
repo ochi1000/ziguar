@@ -1,0 +1,29 @@
+@isTest
+private class UpdateLeadRecordsTest {
+    @testSetup 
+    static void setup() {
+        List<Record> records = new List<Record>();
+        List<LeadRecord> leadRecords = new List<LeadRecord>();
+        // insert 20 records
+        for (Integer i=0;i<10;i++) {
+            records.add(new Record(name='Record '+i, 
+                leadSource='Google', rating='Very Good'));
+        }
+        insert records;
+        // find the records just inserted. add records for each
+        for (Record record : [select id from record]) {
+            leadRecords.add(new LeadRecord(firstname='Ochi', 
+                lastname='Jideofor', recordId=record.id));
+        }
+        insert leadRecords;
+    }
+    static testmethod void test() {        
+        Test.startTest();
+        UpdateLeadRecords uca = new UpdateLeadRecords();
+        Id batchId = Database.executeBatch(uca);
+        Test.stopTest();
+        // after the testing stops, assert records were updated properly
+        System.assertEquals(20, [select count() from leadRecords where LeadSource = 'Google']);
+    }
+    
+}

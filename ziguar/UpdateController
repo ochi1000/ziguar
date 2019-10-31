@@ -1,0 +1,37 @@
+global class UpdateLeadRecords implements 
+    Database.Batchable<sObject>, Database.Stateful {
+    
+    // instance of a record updated
+    global Integer recordsProcess = 0;
+    // assuming the only the data columns in lead records are lead source and rating
+    global Database.QueryLocator start(Database.BatchableContext bc) {
+        return Database.getQueryLocator(
+            'SELECT ID, LeadSource, Rating, '
+        );
+    }
+    global void execute(Database.BatchableContext bc, List<Record> scope){
+        // update each lead records with specific LeadSource and Rating
+        List<LeadRecord> leadRecords = new List<LeadRecord>();
+        for (Record record : scope) {
+            for (LeadRecord leadRecord : record.leadRecords) {
+                leadRecord.LeadSource = 'Google';
+                leadRecord.Rating = 'Very Good';
+                // add leadRecord to list to be updated
+                leadRecords.add(leadRecord);
+                // increment the instance member counter
+                recordsProcessed = recordsProcessed + 1;
+            }
+        }
+        update leadRecords;
+    }    
+    global void finish(Database.BatchableContext bc){
+        System.debug(recordsProcessed + ' records processed. Shazam!');
+        AsyncApexJob job = [SELECT Id, Status, NumberOfErrors, 
+            JobItemsProcessed,
+            TotalJobItems, CreatedBy.Email
+            FROM AsyncApexJob
+            WHERE Id = :bc.getJobId()];
+        // call some utility to send email
+        EmailUtils.sendMessage(job, recordsProcessed);
+    }    
+}
